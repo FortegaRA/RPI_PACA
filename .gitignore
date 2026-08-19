@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RPI_Cluster — archivos que NUNCA deben subirse al repositorio
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Secretos ─────────────────────────────────────────────────────────────────
+# .env contiene tokens reales (Notion, Airtable, contraseña SMTP). Nunca se sube.
+# Para compartir la estructura de configuración se usa .env.example.
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+credentials.json
+secrets.json
+
+# ── Salida de las corridas ───────────────────────────────────────────────────
+# Los CSV/XLSX generados son datos de trabajo, no código. Se regeneran corriendo
+# el programa; versionarlos ensucia el historial y puede filtrar datos.
+output/
+output_*/
+*.log
+
+# ── Python ───────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ── Entornos virtuales ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ── Herramientas de prueba / cobertura ───────────────────────────────────────
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ── Selenium / navegador ─────────────────────────────────────────────────────
+# Drivers descargados automáticamente y perfiles temporales de Chrome.
+chromedriver*
+geckodriver*
+uc_driver*
+downloaded_files/
+latest_logs/
+
+# ── Editores / sistema operativo ─────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/

@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# RPI_Cluster — dependencias
+#
+# INSTALACIÓN:
+#     python -m venv .venv
+#     .venv\Scripts\activate          (Windows)   |   source .venv/bin/activate  (Linux/Mac)
+#     pip install -r requirements.txt
+#
+# Probado con Python 3.11.2 en Windows 11. Requiere Python 3.9 o superior
+# (el código usa sintaxis de tipos moderna).
+#
+# Las versiones están FIJAS a propósito (==). Es la misma combinación con la que
+# se validaron las 132 pruebas y las corridas en vivo de las 9 fuentes. Un rango
+# abierto (>=) dejaría que una versión futura incompatible entre sin aviso y
+# rompiera una corrida sin que se entienda por qué.
+# Para actualizar: cambia la versión aquí, corre las pruebas, y si pasan, confirma.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Obligatorias ─────────────────────────────────────────────────────────────
+requests==2.34.2          # todas las fuentes HTTP (EMA, FDA, Colombia, SV, HN, EC)
+openpyxl==3.1.5           # lee el Excel de Honduras / EMA y escribe el reporte xlsx
+python-dateutil==2.9.0.post0   # respaldo tolerante para fechas raras de los portales
+
+# ── Necesaria solo para los países que usan navegador ────────────────────────
+# Guatemala, República Dominicana y Costa Rica. Requiere Google Chrome instalado.
+# Sin este paquete el programa NO falla: esos países se marcan como omitidos
+# (o usa --no-selenium para saltarlos explícitamente).
+selenium==4.44.0
+
+# ── Opcional: Perú ───────────────────────────────────────────────────────────
+# Perú DIGEMID está detrás de un desafío de Cloudflare. `--pe-stealth` usa
+# SeleniumBase en modo UC para superarlo. Paquete pesado (trae su propio driver)
+# y su uso está pendiente de revisión de compliance, por lo que NO se instala
+# por defecto. Perú queda fuera del alcance inicial.
+#     pip install seleniumbase==4.49.12
+# seleniumbase==4.49.12
+
+# ── Sin integraciones externas ───────────────────────────────────────────────
+# Este programa es LOCAL: no envía datos a ningún servicio. Las integraciones con
+# Notion, Airtable y el envío por correo se eliminaron el 16/08/2026 porque la
+# empresa no permite conectores automatizados. No hay dependencias para eso.

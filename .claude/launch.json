@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "RPI scraper (full run)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["rpi_cluster.py"]
+    },
+    {
+      "name": "RPI scraper (API-only, no Selenium)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["rpi_cluster.py", "--no-selenium"]
+    },
+    {
+      "name": "Unit tests (offline)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "unittest", "discover", "-s", "tests", "-t", "."]
+    },
+    {
+      "name": "Consolidate output CSVs",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["consolidate.py", "--input-dir", "./output", "--output-dir", "./output"]
+    },
+    {
+      "name": "BDA web (static preview)",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.14", "-m", "http.server", "8123", "--directory", "C:/Users/57301/Downloads/BDA_Proyecto_Final/BDA_Proyecto_Final/web"],
+      "port": 8123
+    }
+  ]
+}

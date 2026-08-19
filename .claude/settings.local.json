@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pip --version)",
+      "Bash(python -c \"import importlib.util as u; [print\\(f'{m}:', 'OK' if u.find_spec\\(m\\) else 'MISSING'\\) for m in ['requests','selenium','openpyxl','dateutil','urllib3']]\")",
+      "Bash(python -m pip install -r requirements.txt)",
+      "Bash(python -m pip install --user --no-warn-script-location requests openpyxl python-dateutil)",
+      "Bash(NOTION_TOKEN= python rpi_cluster.py --country FDA --molecule regorafenib)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}
