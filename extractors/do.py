@@ -95,6 +95,7 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
     headless = config_dict.get("headless", False)
     driver = None
     rows: list[dict] = []
+    claimed: set = set()   # ver nota en el bucle: primera molecula que reclama, se lo queda
     consec = rebuilds = 0
     aborted = False
     try:
@@ -129,6 +130,13 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
                             continue
                         row = {field: (cells[idx] if idx < len(cells) else None)
                                for field, idx in colmap.items()}
+                        # First molecule to claim a registration keeps it: the panel
+                        # holds both specific molecules and a broader class entry,
+                        # and the class is last so it only takes what is left over.
+                        reg = row.get("registration_number")
+                        if reg in claimed:
+                            continue
+                        claimed.add(reg)
                         row["status"] = _derive_status(row.get("expiration_date"))
                         row.update({
                             "country_code": COUNTRY_CODE,

@@ -58,7 +58,7 @@ MOLECULES = [
     {"inn": "Finerenone", "latam_term": "FINERENONA", "ema_term": "finerenone", "fda_term": "finerenone", "aliases": ["FINERENONE"], "post_filter": None, "notes": ""},
     {"inn": "Vericiguat", "latam_term": "VERICIGUAT", "ema_term": "vericiguat", "fda_term": "vericiguat", "aliases": [], "post_filter": None, "notes": ""},
     {"inn": "Dapagliflozin", "latam_term": "DAPAGLIFLOZINA", "ema_term": "dapagliflozin", "fda_term": "dapagliflozin", "aliases": ["DAPAGLIFLOZIN"], "post_filter": None, "notes": ""},
-    {"inn": "Empagliflozin", "latam_term": "EMPAGLIFLOZINA", "ema_term": "empagliflozin", "fda_term": "empagliflozin", "aliases": ["EMPAGLIFLOZIN"], "post_filter": None, "notes": ""},
+    {"inn": "Empagliflozin", "latam_term": "EMPAGLIFLOZINA", "ema_term": "empagliflozin", "fda_term": "empagliflozin", "aliases": ["EMPAGLIFLOZIN"], "post_filter": "MONOTHERAPY", "notes": "Solo molécula única — se excluyen las combinaciones a dosis fija"},
     {"inn": "Sotagliflozin", "latam_term": "SOTAGLIFLOZINA", "ema_term": "sotagliflozin", "fda_term": "sotagliflozin", "aliases": ["SOTAGLIFLOZIN"], "post_filter": None, "notes": ""},
     {"inn": "Riociguat", "latam_term": "RIOCIGUAT", "ema_term": "riociguat", "fda_term": "riociguat", "aliases": [], "post_filter": None, "notes": ""},
     {"inn": "Macitentan", "latam_term": "MACITENTAN", "ema_term": "macitentan", "fda_term": "macitentan", "aliases": [], "post_filter": None, "notes": ""},
@@ -67,10 +67,33 @@ MOLECULES = [
     {"inn": "Selexipag", "latam_term": "SELEXIPAG", "ema_term": "selexipag", "fda_term": "selexipag", "aliases": [], "post_filter": None, "notes": ""},
     {"inn": "Ranibizumab (biosimilar)", "latam_term": "RANIBIZUMAB", "ema_term": "ranibizumab", "fda_term": "ranibizumab", "aliases": [], "post_filter": "BIOSIMILAR", "notes": "Post-filter: biosimilar flag in product name"},
     {"inn": "Bevacizumab (ophthalmic)", "latam_term": "BEVACIZUMAB", "ema_term": "bevacizumab", "fda_term": "bevacizumab", "aliases": [], "post_filter": "OPHTHALMIC", "notes": "Post-filter: ophthalmic / oftálmico indication"},
-    {"inn": "Turoctocog alfa pegol", "latam_term": "RFVIII", "ema_term": "turoctocog alfa pegol", "fda_term": "turoctocog alfa pegol", "aliases": ["FACTOR VIII", "TUROCTOCOG"], "post_filter": None, "notes": ""},
+    # ── Factor VIII / hemofilia A ────────────────────────────────────────────
+    # Tres entradas, y el ORDEN IMPORTA: gana la primera coincidencia, así que las
+    # moléculas concretas van antes que la entrada de clase del final. Antes las dos
+    # buscaban "RFVIII" y se quedaban con todo el mercado: de 32 filas etiquetadas
+    # como turoctocog, 14 eran en realidad octocog alfa (KOVALTRY, ADVATE, KOGENATE)
+    # o turoctocog SIN pegol (NOVOEIGHT) — moléculas distintas de otros fabricantes.
+    # "TUROCTOCOG" a secas tampoco sirve: NOVOEIGHT lo lleva en su principio activo.
+    {"inn": "Turoctocog alfa pegol", "latam_term": "TUROCTOCOG ALFA PEGOL", "ema_term": "turoctocog alfa pegol", "fda_term": "turoctocog alfa pegol", "aliases": [], "post_filter": None, "notes": "ESPEROCT — el 'pegol' lo distingue de NOVOEIGHT"},
     {"inn": "Marstacimab", "latam_term": "MARSTACIMAB", "ema_term": "marstacimab", "fda_term": "marstacimab", "aliases": ["MARSTICIMAB", "ANTI-TFPI"], "post_filter": None, "notes": ""},
     {"inn": "Valoctocogene roxaparvovec", "latam_term": "VALOCTOCOGENE ROXAPARVOVEC", "ema_term": "valoctocogene roxaparvovec", "fda_term": "valoctocogene roxaparvovec", "aliases": [], "post_filter": None, "notes": "Gene therapy — expect 0 results in LATAM"},
-    {"inn": "Efanesoctocog alfa", "latam_term": "RFVIII PROTEINA FUSION", "ema_term": "efanesoctocog alfa", "fda_term": "efanesoctocog alfa", "aliases": ["FC-VWF-XTEN", "EFANESOCTOCOG"], "post_filter": None, "notes": ""},
+    {"inn": "Efanesoctocog alfa", "latam_term": "EFANESOCTOCOG", "ema_term": "efanesoctocog alfa", "fda_term": "efanesoctocog alfa", "aliases": ["FC-VWF-XTEN"], "post_filter": None, "notes": "ALTUVIIIO / Altuvoct — nombre propio, sin colisión con turoctocog"},
+    # Llegaron por la lista de productos del PO de Guatemala (21/08/2026) y se
+    # promovieron al panel global para vigilarlos en los 9 países: mientras vivían solo
+    # en la lista de GT, la matriz Molécula×País los mostraba como si se hubieran
+    # buscado en todas partes y solo existieran allí.
+    # Las marcas de aflibercept que aportó el PO son todas biosimilares de Eylea; se
+    # dejan en GT_SEARCH_PRODUCTS y aquí se busca el INN, que es lo que publican los
+    # registros del resto de países.
+    {"inn": "Aflibercept", "latam_term": "AFLIBERCEPT", "ema_term": "aflibercept", "fda_term": "aflibercept", "aliases": ["EYLEA"], "post_filter": None, "notes": "Anti-VEGF oftálmico; el PO de GT sigue sus biosimilares"},
+    # "RIVAROXABÁN" acentuado se busca aparte: los extractores comparan el texto crudo
+    # del portal, así que la forma sin tilde no lo encontraría.
+    {"inn": "Rivaroxaban", "latam_term": "RIVAROXABAN", "ema_term": "rivaroxaban", "fda_term": "rivaroxaban", "aliases": ["RIVAROXABÁN", "XARELTO"], "post_filter": None, "notes": ""},
+    # La red de seguridad: recoge todo Factor VIII que no sea una de las dos anteriores.
+    # Es como los registros LATAM etiquetan de verdad a la competencia — "FACTOR VIII
+    # RECOMBINANTE (RFVIII)", "FACTOR ANTIHEMOFÍLICO (RECOMBINANTE)" — sin nombrar el
+    # INN. Va AL FINAL para no robarle filas a las moléculas concretas de arriba.
+    {"inn": "Factor VIII (clase)", "latam_term": "FACTOR VIII", "ema_term": "coagulation factor viii", "fda_term": "antihemophilic factor", "aliases": ["RFVIII", "FACTOR ANTIHEMOFILICO", "OCTOCOG"], "post_filter": None, "notes": "Vigilancia del mercado de hemofilia A: octocog, damoctocog, efmoroctocog, rurioctocog y genéricos"},
 ]
 
 
@@ -149,6 +172,13 @@ OUTPUT_FILES = {
 # A molecule's `post_filter` key (set in MOLECULES) selects one of these specs.
 # Keyword/brand lists are deliberately easy to tune as registries evolve.
 POST_FILTERS = {
+    "MONOTHERAPY": {  # Empagliflozin
+        "label": "Solo molécula única — sin combinaciones a dosis fija",
+        # No keyword list: this filter works by exclusion, in postfilter._is_combination.
+        # A LATAM registry reports the same active ingredient ("EMPAGLIFLOZINA") for a
+        # monotherapy and for a metformin combination alike, so the decision comes from
+        # the product name — two strengths, a partner INN, or a combination brand line.
+    },
     "PAH_OR_OPHTHALMIC": {  # template — no active molecule (Tadalafil removed)
         "label": "Tadalafil — PAH/ophthalmic only",
         "keywords": ["pulmonar", "pulmonary", "hipertension pulmonar", "arterial pulmonar",
@@ -208,7 +238,77 @@ def build_session(headers: dict | None = None, total_retries: int = 3,
 # would mislabel unrelated products (every Factor VIII → "turoctocog") or never
 # match a product/ingredient name. They stay in MOLECULES["aliases"] for reference
 # but are NOT expanded into live LATAM search queries.
-BROAD_LATAM_TERMS = {"FACTOR VIII", "ANTI-TFPI", "FC-VWF-XTEN"}
+# "FACTOR VIII" ya NO se excluye: dejó de ser un alias suelto que contaminaba a
+# turoctocog y pasó a ser el término propio de la entrada de clase, que va al final
+# de MOLECULES y por tanto solo recoge lo que las moléculas concretas no reclamaron.
+BROAD_LATAM_TERMS = {"ANTI-TFPI", "FC-VWF-XTEN"}
+
+
+# ── Guatemala: búsqueda por producto, no por molécula ─────────────────────────
+# El portal de MSPAS consulta por NOMBRE DE PRODUCTO (su columna de principio activo
+# viene vacía del servidor), así que buscar el INN solo encuentra los genéricos que lo
+# llevan en el nombre — "ENZALUTAMIDA Lotus 40mg" aparece, IZABAN o YESAFILI no.
+# Esta lista la aporta el PO de Guatemala: cada marca comercializada allí, con la
+# molécula a la que pertenece, para que las filas consoliden con el resto de países.
+#
+# Cada entrada es (molécula canónica, [términos a buscar]). La molécula es la que
+# termina en `molecule_search_term`, de modo que un producto de marca queda agrupado
+# con sus equivalentes de otros países.
+GT_SEARCH_PRODUCTS = [
+    ("Regorafenib",   ["REGORAFENIB", "REZITIX"]),
+    ("Sorafenib",     ["SORAFENIB", "ZORAFRED", "SORAVITAE", "SOXANIB", "ZORACORD",
+                       "REXANIB", "AFENIB", "SONIB", "SARONIF", "SORAGLOB"]),
+    ("Apalutamide",   ["APALUTAMIDA", "PROSMID"]),
+    ("Enzalutamide",  ["ENZALUTAMIDA", "XALUT", "MIDALUNE", "ENZACORD"]),
+    ("Fezolinetant",  ["VEOZAH", "VEOZA"]),
+    # El PO escribe "DAPAGLIFOZINA"/"EMPAGLIFOZINA" sin la primera L; se buscan ambas
+    # grafías porque cualquiera de las dos puede ser la registrada en el portal.
+    ("Dapagliflozin", ["DAPAGLIFOZINA", "DAPAGLIFLOZINA", "DAPHA", "DAPAGLIX",
+                       "PAZIGLIP", "DAPAGET", "DAPAGLICIN", "FANTER"]),
+    ("Empagliflozin", ["EMPAGLIFOZINA", "EMPAGLIFLOZINA", "EMPAFLOX", "IZABAN",
+                       "GLUCONIL"]),
+    ("Sotagliflozin", ["ZYNQUISTA"]),
+    ("Riociguat",     ["PULLMOGUAT", "RIOCI"]),
+    ("Treprostinil",  ["TYVASO", "ORENITRAM"]),
+    # Aflibercept y Rivaroxaban entraron al panel global el 21/08/2026, así que ya se
+    # buscan en los 9 países. Aquí quedan sus marcas, que es lo único que encuentra el
+    # portal guatemalteco cuando el nombre del producto no lleva el INN.
+    ("Aflibercept",   ["AFLIBERCEPT", "YESAFILI", "AHZANTIVE", "OPUVIZ", "PAVBLU",
+                       "EYDENZELT"]),
+    # "RANI" a secas está descartado a propósito: el portal devuelve 10 RANITIDINAS.
+    ("Ranibizumab (biosimilar)", ["RANIVISIO"]),
+    ("Bevacizumab (ophthalmic)", ["LYTENAVA"]),
+    ("Turoctocog alfa pegol",    ["ESPEROCT"]),
+    ("Rivaroxaban",   ["RIVAROXABAN", "XAROBAN", "TROMBOPROF", "RIVACRIST", "ROTHROM",
+                       "ASARAP", "RIVAX", "ORTACTA", "RIVOXA", "RIBEX", "RIVOXVITAE",
+                       "ROXAR"]),
+    # El PO listó estas marcas sin indicar molécula. Son sistemas intrauterinos de
+    # LEVONORGESTREL: confirmado para ASERTIA, ELOIRA, LILETTA, MIA CARE (52 mg,
+    # 20 µg/24 h), MAHELY (Gynopharm, RD) y ENGYNO (Gedeon Richter, Perú). EMILY y
+    # FIONA no aparecen en fuentes públicas — se agrupan aquí por pertenecer a la
+    # misma lista y categoría; conviene que el PO lo confirme.
+    ("Levonorgestrel (DIU)", ["ASERTIA", "ELOIRA", "ENGYNO", "EMILY",
+                              "MAHELY", "LILETTA", "FIONA", "MIA CARE"]),
+]
+
+
+def gt_search_products(molecules: list[dict] | None = None) -> list[tuple]:
+    """GT's (molecule, terms) pairs, narrowed to the molecules being run.
+
+    With the full panel every entry is searched, including the GT-only molecules that
+    are absent from MOLECULES. Under ``--molecule`` only the matching entry runs, so a
+    single-molecule run stays fast.
+    """
+    if not molecules or len(molecules) == len(MOLECULES):
+        return GT_SEARCH_PRODUCTS
+
+    def _key(value) -> str:
+        return (canonical_inn(value) or str(value or "").strip().upper())
+
+    # A caller may pass an ad-hoc molecule dict without an `inn`; fall back to the
+    # LATAM term so a narrowed run still resolves instead of raising.
+    wanted = {_key(m.get("inn") or m.get("latam_term")) for m in molecules}
+    return [(inn, terms) for inn, terms in GT_SEARCH_PRODUCTS if _key(inn) in wanted]
 
 
 def search_terms(molecule: dict) -> list[str]:

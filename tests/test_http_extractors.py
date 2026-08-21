@@ -330,3 +330,54 @@ class TestColombiaDistinguishesOutageFromEmpty(unittest.TestCase):
         rows = co_approvals.extract(MOL, c)
         self.assertEqual(len(rows), 1)
         self.assertEqual(c["partial_errors"], [])
+
+
+class TestElSalvadorFirstClaimWins(unittest.TestCase):
+    """A registration belongs to the first molecule that claims it.
+
+    El Salvador is queried once per search term, so a product that answers several
+    terms comes back several times. Without a guard, deduplication keeps whichever
+    was appended last — and since the Factor VIII class entry sits at the end of the
+    panel, it took ESPEROCT away from turoctocog alfa pegol on the live portal.
+    """
+
+    TWO = [
+        {"inn": "Turoctocog alfa pegol", "latam_term": "TUROCTOCOG ALFA PEGOL",
+         "ema_term": "turoctocog alfa pegol", "fda_term": "turoctocog alfa pegol",
+         "aliases": []},
+        {"inn": "Factor VIII (clase)", "latam_term": "FACTOR VIII",
+         "ema_term": "coagulation factor viii", "fda_term": "antihemophilic factor",
+         "aliases": []},
+    ]
+
+    def _session(self, *, both_terms_return_esperoct=True):
+        rec = {"registroSanitario": "SV-ESPEROCT-1", "nombreRegistro": "Esperoct 500 UI",
+               "titular": "NOVO", "estado": "ACTIVO", "primeraAutorizacion": "2024-01-01"}
+        def handler(method, url, **kw):
+            term = (kw.get("params") or {}).get("busqueda", "")
+            hit = both_terms_return_esperoct or term.startswith("TUROCTOCOG")
+            data = [rec] if hit else []
+            return fk.FakeResponse(json_data={"recordsFiltered": len(data), "data": data})
+        return fk.FakeSession(handler=handler)
+
+    def test_specific_molecule_keeps_the_row(self):
+        c = cfg(session=self._session())
+        rows = sv.extract(self.TWO, c)
+        self.assertEqual(len(rows), 1, "the product must not be emitted twice")
+        self.assertEqual(rows[0]["molecule_search_term"], "TUROCTOCOG ALFA PEGOL")
+
+    def test_class_entry_still_collects_what_is_left(self):
+        """Reversing the order proves the guard is about position, not identity."""
+        c = cfg(session=self._session())
+        rows = sv.extract(list(reversed(self.TWO)), c)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["molecule_search_term"], "FACTOR VIII")
+
+    def test_distinct_registrations_are_all_kept(self):
+        def handler(method, url, **kw):
+            term = (kw.get("params") or {}).get("busqueda", "")
+            rec = {"registroSanitario": f"SV-{term[:6]}", "nombreRegistro": f"P {term[:6]}",
+                   "titular": "X", "estado": "ACTIVO", "primeraAutorizacion": "2024-01-01"}
+            return fk.FakeResponse(json_data={"recordsFiltered": 1, "data": [rec]})
+        rows = sv.extract(self.TWO, cfg(session=fk.FakeSession(handler=handler)))
+        self.assertEqual(len({r["registration_number"] for r in rows}), 2)

@@ -60,6 +60,13 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
         errors.append(f"SV: priming failed: {exc}")
 
     rows: list[dict] = []
+    # First molecule to claim a registration keeps it. The panel deliberately holds
+    # both specific molecules and a broader class entry (Factor VIII), and the class
+    # sits last precisely so it only picks up what the specific ones left. Without
+    # this guard the same product comes back under several queries and deduplication
+    # keeps whichever was appended last — handing ESPEROCT to the class entry instead
+    # of to turoctocog alfa pegol.
+    claimed: set = set()
     for m in molecules:
         canon = m["latam_term"].upper()  # tag rows with the canonical term
         for term in config.search_terms(m):  # latam_term + INN-variant aliases
@@ -71,8 +78,12 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
                     if not data:
                         break
                     for rec in data:
+                        reg = rec.get("registroSanitario")
+                        if reg in claimed:
+                            continue
+                        claimed.add(reg)
                         rows.append({
-                            "registration_number": rec.get("registroSanitario"),
+                            "registration_number": reg,
                             "product_name": rec.get("nombreRegistro"),
                             "applicant": rec.get("titular"),
                             "status": rec.get("estado"),

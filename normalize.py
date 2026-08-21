@@ -148,6 +148,8 @@ _STATUS_MAP = {
     "withdrawn": "CANCELED",
     "application withdrawn": "CANCELED",  # EMA post-auth phrasing
     "withdrawn from rolling review": "CANCELED",  # EMA
+    "eliminado": "CANCELED",       # SV: registro retirado del listado
+    "eliminada": "CANCELED",
     "wd": "CANCELED",  # FDA Withdrawn
 }
 

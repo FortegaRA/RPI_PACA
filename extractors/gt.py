@@ -3,8 +3,15 @@ gt.py — Guatemala MSPAS (Selenium, PHP server-rendered paginated table).
 
 Portal: https://regsanitario.mspas.gob.gt/reg_sanitario/Vigentes.php
 Navigated directly (the public site embeds this as an iframe; hitting the inner
-URL avoids context-switching). Searches are by product name — both the molecule
-LATAM term and any known brand aliases. Capped at MAX_PAGES per search term.
+URL avoids context-switching). Capped at MAX_PAGES per search term.
+
+Guatemala is searched by PRODUCT NAME, not by molecule: MSPAS serves its
+*Principio Activo* column empty, so querying an INN only finds the generics that
+carry it in their name — "ENZALUTAMIDA Lotus 40mg" turns up, IZABAN and YESAFILI
+do not. The brand list lives in ``config.GT_SEARCH_PRODUCTS`` (supplied by the
+Guatemala PO) and each brand is paired with the molecule it belongs to, which is
+what lands in ``molecule_search_term`` so a Guatemalan brand consolidates with the
+same molecule in every other country.
 """
 
 from __future__ import annotations
@@ -126,7 +133,34 @@ def _click_next(driver) -> bool:
     return False
 
 
-def _harvest_term(driver, term: str) -> list[dict]:
+def _search_plan(molecules: list[dict]) -> list[tuple]:
+    """(molecule, terms) pairs to search, brands first and panel INNs after.
+
+    The PO's brand list is what finds products whose name carries no INN (IZABAN,
+    YESAFILI, XALUT). The panel's own terms follow as a safety net so a molecule the
+    list happens to omit is still covered; rows already taken are skipped via the
+    `claimed` set, so the second pass only adds what the first missed.
+    """
+    plan = list(config.gt_search_products(molecules))
+    listed = {inn.upper() for inn, _ in plan}
+    for m in molecules:
+        # An ad-hoc molecule may arrive without an `inn`; fall back to its LATAM term.
+        label = m.get("inn") or m.get("latam_term") or ""
+        if label and label.upper() not in listed:
+            plan.append((label, config.search_terms(m)))
+    return plan
+
+
+def _harvest_term(driver, molecule: str, claimed: set | None = None) -> list[dict]:
+    """Collect the rows on screen and tag them with *molecule*.
+
+    The search that produced them was by brand name, but the row is labelled with the
+    molecule that brand belongs to — that is what lets a Guatemalan brand line up with
+    the same molecule in the other countries. *claimed* holds registrations already
+    taken by an earlier molecule, so nothing is counted twice.
+    """
+    claimed = claimed if claimed is not None else set()
+    term = molecule  # used in the "empty result page" message below
     sb.wait_for_table(driver, TABLE_CSS, timeout=15)
     out = []
     seen_first = None
@@ -152,10 +186,14 @@ def _harvest_term(driver, term: str) -> list[dict]:
                 continue
             row = {field: (cells[idx] if idx < len(cells) else None)
                    for field, idx in colmap.items()}
+            reg = row.get("registration_number")
+            if reg in claimed:
+                continue
+            claimed.add(reg)
             row.update({
                 "country_code": COUNTRY_CODE,
                 "record_type": "APPROVAL",
-                "molecule_search_term": term.upper(),
+                "molecule_search_term": molecule.upper(),
                 "source_url": SOURCE_URL,
             })
             # MSPAS publishes no approval date, but a Guatemalan sanitary registration
@@ -181,13 +219,23 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
     rows: list[dict] = []
     consec = rebuilds = 0
     aborted = False
+    claimed: set = set()   # primera molecula que reclama un registro, se lo queda
     try:
         driver = sb.build_driver(headless=headless)
-        for m in molecules:
+        # Guatemala is searched by PRODUCT, not by molecule: MSPAS serves an empty
+        # active-ingredient column, so an INN query only finds generics that carry it
+        # in their name. The brand list comes from config.GT_SEARCH_PRODUCTS, and each
+        # brand is tagged with its molecule so the rows consolidate with other countries.
+        #
+        # The brand list runs first and its rows are `claimed`; the panel's own INNs
+        # then run as a safety net for anything the list does not name. That matters:
+        # the list omits lenvatinib and macitentan, both of which are registered in
+        # Guatemala (LENVATINIB Neoethicals, MACITENTAN Para Farmacias), so a
+        # brand-only search would silently drop them.
+        for inn, terms in _search_plan(molecules):
             if aborted or driver is None:
                 break
-            # Search the LATAM term plus its INN-variant aliases.
-            for term in config.search_terms(m):
+            for term in terms:
                 if aborted or driver is None:
                     break
                 try:
@@ -198,7 +246,7 @@ def extract(molecules: list[dict], config_dict: dict) -> list[dict]:
                         print(f"    [GT] search form not found for '{term}'")
                         errors.append(f"GT {term}: search form not found")
                         continue
-                    rows.extend(_harvest_term(driver, m["latam_term"]))
+                    rows.extend(_harvest_term(driver, inn, claimed))
                     consec = 0
                 except Exception as exc:  # noqa: BLE001
                     driver, consec, rebuilds, aborted = sb.handle_loop_error(

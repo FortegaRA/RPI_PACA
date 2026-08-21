@@ -36,9 +36,23 @@ class TestCanonicalInn(unittest.TestCase):
             self.assertEqual(config.canonical_inn(spanish), inn)
             self.assertEqual(config.canonical_inn(inn), inn)
 
-    def test_local_shorthand_resolves(self):
-        # Peru/LATAM track turoctocog under a factor-VIII shorthand.
-        self.assertEqual(config.canonical_inn("RFVIII"), "TUROCTOCOG ALFA PEGOL")
+    def test_factor_viii_shorthand_belongs_to_the_class_entry(self):
+        """RFVIII names the class, not one molecule — LATAM registries use it for
+        octocog, turoctocog and the rest alike, so it resolves to the class entry."""
+        self.assertEqual(config.canonical_inn("RFVIII"), "FACTOR VIII (CLASE)")
+        self.assertEqual(config.canonical_inn("FACTOR VIII"), "FACTOR VIII (CLASE)")
+
+    def test_specific_factor_viii_molecules_keep_their_identity(self):
+        self.assertEqual(config.canonical_inn("TUROCTOCOG ALFA PEGOL"),
+                         "TUROCTOCOG ALFA PEGOL")
+        self.assertEqual(config.canonical_inn("EFANESOCTOCOG"), "EFANESOCTOCOG ALFA")
+
+    def test_class_entry_is_last_so_it_never_steals_a_specific_match(self):
+        """First match wins during extraction, so ordering carries the logic."""
+        names = [m["inn"] for m in config.MOLECULES]
+        self.assertEqual(names[-1], "Factor VIII (clase)")
+        self.assertLess(names.index("Turoctocog alfa pegol"), len(names) - 1)
+        self.assertLess(names.index("Efanesoctocog alfa"), len(names) - 1)
 
     def test_lookup_is_case_and_space_insensitive(self):
         self.assertEqual(config.canonical_inn("  dapagliflozin "), "DAPAGLIFLOZIN")

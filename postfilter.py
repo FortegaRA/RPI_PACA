@@ -21,6 +21,7 @@ Public API:
 
 from __future__ import annotations
 
+import re
 import unicodedata
 
 import config
@@ -42,10 +43,51 @@ def _haystack(row: dict) -> str:
     return " ".join(_fold(row.get(f)) for f in _TEXT_FIELDS)
 
 
+# A fixed-dose combination advertises itself with two strengths in the product name
+# — "JARDIANCE DUO 12.5 MG / 1000 MG", "Efimax Dúo 12.5 / 850", "EMADIAN MET 5/1000".
+# That pattern is the reliable tell in LATAM, because those registries normalize the
+# active-ingredient column to the single INN that was searched ("EMPAGLIFLOZINA")
+# whether the product is a monotherapy or a combination.
+_DUAL_STRENGTH = re.compile(r"\d+([.,]\d+)?\s*(mg|mcg|g|ui|u)?\s*/\s*\d+", re.I)
+
+
+def _is_combination(row: dict) -> bool:
+    """True when the row is a fixed-dose combination rather than a single agent."""
+    name = _fold(row.get("product_name"))
+    api = _fold(row.get("api"))
+
+    # FDA lists every ingredient, so a joined api is conclusive on its own.
+    if " + " in api or ";" in api:
+        return True
+    # A second INN named outright, in either field.
+    if any(partner in f"{name} {api}" for partner in _COMBINATION_PARTNERS):
+        return True
+    # Two strengths in the name.
+    if _DUAL_STRENGTH.search(name):
+        return True
+    # Brand words registries use for their combination lines.
+    return any(word in name for word in _COMBINATION_WORDS)
+
+
+# Partners that appear alongside an SGLT2 inhibitor in marketed fixed-dose products.
+_COMBINATION_PARTNERS = ("metformin", "linaglipt", "sitaglipt", "saxaglipt",
+                         "glimepirid", "pioglitazon")
+# Combination-line markers. Kept narrow: "duo", "complex" and "met" as a separate
+# word, never a loose substring that would swallow ordinary brand names.
+_COMBINATION_WORDS = (" duo", "duo ", " complex", "complex ", " met ", " met/",
+                      "glyxambi", "synjardy", "trijardy", "xigduo", "qtern", "ebymect")
+
+
 def row_passes(row: dict, ftype: str, spec: dict) -> bool:
     """True if *row* belongs to the indication/sub-type the filter keeps."""
     hay = _haystack(row)
     name = _fold(row.get("product_name"))
+
+    if ftype == "MONOTHERAPY":
+        # Inverted default: everything is kept unless it looks like a combination.
+        # The others answer "can we confirm the required use?"; this one answers
+        # "is anything else in the tablet?", so absence of evidence keeps the row.
+        return not _is_combination(row)
 
     if any(_fold(kw) in hay for kw in spec.get("keywords", [])):
         return True

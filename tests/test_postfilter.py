@@ -145,5 +145,56 @@ class TestIndicationHintDoesNotLeak(unittest.TestCase):
         self.assertEqual(header, normalize.CANONICAL_FIELDS)
 
 
+
+class TestMonotherapyOnly(unittest.TestCase):
+    """Empagliflozin is tracked as a single agent only — no fixed-dose combinations.
+
+    LATAM registries report the same active ingredient ("EMPAGLIFLOZINA") whether the
+    product is a monotherapy or a metformin combination, so `api` alone cannot decide
+    it. The product name can: two strengths, a partner INN, or a combination brand.
+    """
+
+    def _row(self, name, api="EMPAGLIFLOZINA"):
+        return {"molecule_search_term": "EMPAGLIFLOZIN", "product_name": name,
+                "api": api, "applicant": "", "_indication_hint": ""}
+
+    def _kept(self, rows):
+        kept, _ = postfilter.apply_post_filters(rows, config.MOLECULES)
+        return [r["product_name"] for r in kept]
+
+    def test_single_agent_is_kept(self):
+        for name in ("JARDIANCE 10 MG", "Efflusso® 25mg", "EMADIAN® 25",
+                     "Empagliflozina 25 mg tabletas recubiertas"):
+            self.assertEqual(self._kept([self._row(name)]), [name], name)
+
+    def test_dual_strength_marks_a_combination(self):
+        for name in ("JARDIANCE DUO® 12.5 MG / 1000 MG", "GLYXAMBI® 25 MG/ 5 MG",
+                     "Efimax® Dúo 12.5 / 850", "Izaban DPP® 10mg/5mg"):
+            self.assertEqual(self._kept([self._row(name)]), [], name)
+
+    def test_partner_inn_marks_a_combination(self):
+        row = self._row("EMPAGLIFLOZINA Y METFORMINA CLORHIDRATO 12.5 mg")
+        self.assertEqual(self._kept([row]), [])
+
+    def test_joined_api_marks_a_combination(self):
+        """FDA lists every ingredient, which settles it without the name."""
+        row = self._row("SYNJARDY", api="EMPAGLIFLOZIN + METFORMIN HYDROCHLORIDE")
+        self.assertEqual(self._kept([row]), [])
+
+    def test_combination_brand_line_without_strengths(self):
+        for name in ("PAGLIFLOX® DUO", "EMPIRIA ® COMPLEX", "DEMPI DUO"):
+            self.assertEqual(self._kept([self._row(name)]), [], name)
+
+    def test_absence_of_evidence_keeps_the_row(self):
+        """Inverted default: unlike the indication filters, a bare row survives."""
+        self.assertEqual(self._kept([self._row("EMPAGLIFLOZINA")]), ["EMPAGLIFLOZINA"])
+
+    def test_other_molecules_are_untouched(self):
+        row = {"molecule_search_term": "REGORAFENIB", "product_name": "STIVARGA 40 MG / 30",
+               "api": "REGORAFENIB", "applicant": "", "_indication_hint": ""}
+        self.assertEqual(self._kept([row]), ["STIVARGA 40 MG / 30"],
+                         "el filtro solo aplica a las moleculas que lo declaran")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -30,10 +30,21 @@ class TestSearchTerms(unittest.TestCase):
         self.assertEqual(config.search_terms(TADALAFIL), ["TADAFILO", "TADALAFIL", "TADALAFILO"])
 
     def test_excludes_broad_terms(self):
-        turoctocog = {"latam_term": "RFVIII", "aliases": ["FACTOR VIII", "TUROCTOCOG"]}
-        terms = config.search_terms(turoctocog)
-        self.assertIn("TUROCTOCOG", terms)
-        self.assertNotIn("FACTOR VIII", terms)  # broad -> not expanded
+        """A mechanism-level alias would mislabel every product of its class."""
+        marstacimab = {"latam_term": "MARSTACIMAB", "aliases": ["MARSTICIMAB", "ANTI-TFPI"]}
+        terms = config.search_terms(marstacimab)
+        self.assertIn("MARSTICIMAB", terms)
+        self.assertNotIn("ANTI-TFPI", terms)  # broad -> not expanded
+
+    def test_factor_viii_is_no_longer_broad(self):
+        """It stopped being a stray alias and became the class entry's own term.
+
+        As an alias on turoctocog it grabbed the whole hemophilia-A market; as the
+        `latam_term` of an entry placed last in MOLECULES it only picks up what the
+        specific molecules did not already claim.
+        """
+        clase = next(m for m in config.MOLECULES if m["inn"] == "Factor VIII (clase)")
+        self.assertIn("FACTOR VIII", config.search_terms(clase))
 
     def test_deduplicates_and_uppercases(self):
         m = {"latam_term": "foo", "aliases": ["FOO", "foo", "Bar"]}
